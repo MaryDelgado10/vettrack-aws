@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VetTrack - Registro de Mascotas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        form {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .error {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>VetTrack - Sistema de Registro de Mascotas</h1>
+    
+    <form id="petForm">
+        <h2>Registrar Nueva Mascota</h2>
+        <div class="error" id="errorMessage"></div>
+        
+        <div>
+            <label for="petName">Nombre de la Mascota:</label>
+            <input type="text" id="petName" name="petName" required>
+        </div>
+        
+        <div>
+            <label for="ownerName">Nombre del Dueño:</label>
+            <input type="text" id="ownerName" name="ownerName" required>
+        </div>
+        
+        <button type="submit">Registrar Mascota</button>
+    </form>
+    
+    <h2>Mascotas Registradas</h2>
+    <table id="petsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre de la Mascota</th>
+                <th>Nombre del Dueño</th>
+                <th>Fecha de Registro</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se cargarán las mascotas -->
+        </tbody>
+    </table>
+
+    <script>
+        // Función para cargar las mascotas
+        async function loadPets() {
+            try {
+                const response = await fetch('/api/pets');
+                const pets = await response.json();
+                
+                const tableBody = document.querySelector('#petsTable tbody');
+                tableBody.innerHTML = '';
+                
+                pets.forEach(pet => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${pet.id}</td>
+                        <td>${pet.name}</td>
+                        <td>${pet.owner_name}</td>
+                        <td>${new Date(pet.created_at).toLocaleString()}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error al cargar las mascotas:', error);
+            }
+        }
+        
+        // Manejar el envío del formulario
+        document.getElementById('petForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const petName = document.getElementById('petName').value;
+            const ownerName = document.getElementById('ownerName').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            try {
+                const response = await fetch('/api/pets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: petName,
+                        ownerName: ownerName
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al registrar la mascota');
+                }
+                
+                // Limpiar el formulario y mensajes de error
+                document.getElementById('petName').value = '';
+                document.getElementById('ownerName').value = '';
+                errorMessage.textContent = '';
+                
+                // Recargar la lista de mascotas
+                loadPets();
+                
+            } catch (error) {
+                errorMessage.textContent = error.message;
+            }
+        });
+        
+        // Cargar las mascotas al cargar la página
+        document.addEventListener('DOMContentLoaded', loadPets);
+    </script>
+</body>
+</html>
